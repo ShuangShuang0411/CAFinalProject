@@ -135,10 +135,6 @@ void HLLC_Riemann_Solver ( double **U_L, double **U_R, double **HLLC_flux ){
             HLLC_flux[2][i] = F_R[2][i];
         }
     }
-//    delete[] F_L;
-//    delete[] F_R;
-//    delete[] F_star_L;
-//    delete[] F_star_L;
 }
 
 
@@ -234,14 +230,6 @@ int main(int argc, const char * argv[]) {
     
     Conserved2Primitive(U, W);
     
-/*  for debug
-    for (int i=0;i<3;i++){
-        for (int j=0;j<N;j++){
-            printf("%e ", W[i][j]);
-        }
-        printf("\n\n");
-    }
-*/
     
     //save data into file
     for (int i=0;i<3;i++){
