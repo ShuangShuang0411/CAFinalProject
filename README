@@ -1,0 +1,10 @@
+High-order Data Reconstruction in Hydro
+
+This is the final project for Computational Astrophysics 2022, by Shuang-Shuang Chen and Hao-Yang Hsu.
+
+The following is a brief description on how to use the code:
+1. First you can modify 1D_Hydro_HLLC_evol.cpp, and compile it using "sh compile.sh 1D_Hydro_HLLC_evol.cpp". The executable 1D_Hydro_HLLC_evol.out will then be generated and put in bin/ directory.
+2. Go to bin/ and run the code by commanding "./1D_Hydro_HLLC_evol.out", it will generate a data_evol.txt file containing the results in the same directory (bin/).
+3. Plot the data by commanding "python 1D_evol.py" in the main directory.
+
+

@@ -3,7 +3,7 @@ import numpy as np
 
 num = np.arange(1000)
 
-data = np.loadtxt("/Users/mac/Desktop/data_evol.txt")
+data = np.loadtxt("./bin/data_evol.txt")
 
 W0_orig = data[0]
 W1_orig = data[1]
@@ -13,7 +13,7 @@ W1_evol = data[4]
 W2_evol = data[5]
 
 s_speed = (5.0/3.0*data[5][370]/data[3][370])**0.5
-print(s_speed,data[4][370],data[4][370]/s_speed)
+#print(s_speed,data[4][370],data[4][370]/s_speed)
 
 evol_fig = plt.figure()            
 

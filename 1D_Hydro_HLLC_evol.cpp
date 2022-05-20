@@ -1,7 +1,8 @@
-#include <stdio.h>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <omp.h>
 #include <math.h>
-#include <stdlib.h>
-
 
 float Gamma = 5.0/3.0;
 int N = 1000;
@@ -10,7 +11,7 @@ double T = 1.0;
 
 // primitive variables to conserved variables
 // E = P/(gamma-1) + 0.5*tho*v^2
-void Conserved2Primitive ( double (*U)[N], double (*pri)[N] ){
+void Conserved2Primitive ( double **U, double **pri ){
     
     for (int i=0;i<N;i++){
         pri[0][i]=U[0][i];
@@ -20,7 +21,7 @@ void Conserved2Primitive ( double (*U)[N], double (*pri)[N] ){
 }
 
 // conserved variables to primitive variables
-void Primitive2Conserved ( double (*pri)[N], double (*cons)[N] ){
+void Primitive2Conserved ( double **pri, double **cons ){
     
     for (int i=0;i<N;i++){
         cons[0][i]=pri[0][i];
@@ -34,7 +35,7 @@ double ComputePressure( double tho, double px, double e ){
     return p;
 }
 
-void SoundSpeedMax( double (*U)[N], double *s_max) {
+void SoundSpeedMax( double **U, double *s_max) {
     double s[N], p[N];
     for (int i=0;i<N;i++){
         p[i] = ComputePressure(U[0][i],U[1][i],U[2][i]);
@@ -48,7 +49,7 @@ void SoundSpeedMax( double (*U)[N], double *s_max) {
     }
 }
 
-void Conserved2Flux ( double (*U)[N], double (*flux)[N] ){
+void Conserved2Flux ( double **U, double **flux ){
     
     for (int i=0;i<N;i++){
         double P = ComputePressure( U[0][i], U[1][i], U[2][i]);
@@ -59,13 +60,16 @@ void Conserved2Flux ( double (*U)[N], double (*flux)[N] ){
     }
 }
 
-void HLLC_Riemann_Solver ( double (*U_L)[N], double (*U_R)[N], double(*HLLC_flux)[N] ){
+void HLLC_Riemann_Solver ( double **U_L, double **U_R, double **HLLC_flux ){
     
-    double (*F_L)[N] = (double(*)[N])malloc(3*sizeof(*F_L));
-    double (*F_R)[N] = (double(*)[N])malloc(3*sizeof(*F_R));
-    
-    double (*F_star_L)[N] = (double(*)[N])malloc(3*sizeof(*F_star_L));
-    double (*F_star_R)[N] = (double(*)[N])malloc(3*sizeof(*F_star_R));
+    double **F_L = new double*[3];
+    for (int i = 0; i < 3; i++)   F_L[i] = new double[N]; 
+    double **F_R = new double*[3];
+    for (int i = 0; i < 3; i++)   F_R[i] = new double[N]; 
+    double **F_star_L = new double*[3];
+    for (int i = 0; i < 3; i++)   F_star_L[i] = new double[N]; 
+    double **F_star_R = new double*[3];
+    for (int i = 0; i < 3; i++)   F_star_R[i] = new double[N]; 
     
     double a_L[N], a_R[N];
     double u_L[N], u_R[N];
@@ -131,21 +135,27 @@ void HLLC_Riemann_Solver ( double (*U_L)[N], double (*U_R)[N], double(*HLLC_flux
             HLLC_flux[2][i] = F_R[2][i];
         }
     }
-    free(F_L);
-    free(F_R);
-    free(F_star_L);
-    free(F_star_R);
+//    delete[] F_L;
+//    delete[] F_R;
+//    delete[] F_star_L;
+//    delete[] F_star_L;
 }
 
 
 int main(int argc, const char * argv[]) {
-    
-    double (*U)[N] = (double(*)[N])malloc(3*sizeof(*U));
-    double (*W)[N] = (double(*)[N])malloc(3*sizeof(*W));
-    double (*HLLC_flux_L)[N] = (double(*)[N])malloc(3*sizeof(*HLLC_flux_L));
-    double (*HLLC_flux_R)[N] = (double(*)[N])malloc(3*sizeof(*HLLC_flux_R));
-    double (*U_L)[N] = (double(*)[N])malloc(3*sizeof(*U_L));
-    double (*U_R)[N] = (double(*)[N])malloc(3*sizeof(*U_R));
+
+    double **U = new double*[3];
+    for (int i = 0; i < 3; i++)   U[i] = new double[N]; 
+    double **W = new double*[3];
+    for (int i = 0; i < 3; i++)   W[i] = new double[N];
+    double **HLLC_flux_L = new double*[3];
+    for (int i = 0; i < 3; i++)   HLLC_flux_L[i] = new double[N];
+    double **HLLC_flux_R = new double*[3];
+    for (int i = 0; i < 3; i++)   HLLC_flux_R[i] = new double[N];
+    double **U_L = new double*[3];
+    for (int i = 0; i < 3; i++)   U_L[i] = new double[N];
+    double **U_R = new double*[3];
+    for (int i = 0; i < 3; i++)   U_R[i] = new double[N];
     
     double dx = 1.0/128.0;
     double dt;
@@ -154,7 +164,7 @@ int main(int argc, const char * argv[]) {
     
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("/Users/mac/Desktop/data_evol.txt", "w");
+    data_ptr = fopen("./data_evol.txt", "w");
     if (data_ptr==0)  return 0;
     
     //set the initial condition
@@ -224,12 +234,14 @@ int main(int argc, const char * argv[]) {
     
     Conserved2Primitive(U, W);
     
+/*  for debug
     for (int i=0;i<3;i++){
         for (int j=0;j<N;j++){
             printf("%e ", W[i][j]);
         }
         printf("\n\n");
     }
+*/
     
     //save data into file
     for (int i=0;i<3;i++){
@@ -241,12 +253,12 @@ int main(int argc, const char * argv[]) {
 
     fclose(data_ptr);
     
-    free(U);
-    free(HLLC_flux_L);
-    free(HLLC_flux_R);
-    free(U_R);
-    free(U_L);
-    free(W);
+    delete[] U;
+    delete[] W;
+    delete[] HLLC_flux_L;
+    delete[] HLLC_flux_R;
+    delete[] U_L;
+    delete[] U_R;
     
     return 0;
 }
