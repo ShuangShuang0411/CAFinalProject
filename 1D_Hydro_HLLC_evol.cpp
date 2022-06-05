@@ -6,7 +6,7 @@
 
 float Gamma = 5.0/3.0;
 int N = 1000;
-double T = 1.0;
+double T = 0.1;
 
 
 // primitive variables to conserved variables
@@ -153,14 +153,14 @@ int main(int argc, const char * argv[]) {
     double **U_R = new double*[3];
     for (int i = 0; i < 3; i++)   U_R[i] = new double[N];
     
-    double dx = 1.0/128.0;
+    double dx = 1.0/N;
     double dt;
     double t = 0.;
     double S_max = 6.29;
     
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./data_evol.txt", "w");
+    data_ptr = fopen("./bin/data_evol.txt", "w");
     if (data_ptr==0)  return 0;
     
     //set the initial condition
@@ -207,17 +207,17 @@ int main(int argc, const char * argv[]) {
         
         //compute dt
         SoundSpeedMax(U, &S_max);
-        //printf("%.2f ",S_max);  //debug
         dt = dx/S_max;
         t += dt;
+        printf("Debug: dt = %.10f, t = %.10f\n", dt, t);
         
         //update data
         HLLC_Riemann_Solver(U,U_R,HLLC_flux_R);
-        HLLC_Riemann_Solver(U_L,U,HLLC_flux_L);
+//        HLLC_Riemann_Solver(U_L,U,HLLC_flux_L);
         for (int i=1;i<N-1;i++){
-            U[0][i] -= (HLLC_flux_R[0][i]-HLLC_flux_L[0][i])*dt/dx;
-            U[1][i] -= (HLLC_flux_R[1][i]-HLLC_flux_L[1][i])*dt/dx;
-            U[2][i] -= (HLLC_flux_R[2][i]-HLLC_flux_L[2][i])*dt/dx;
+            U[0][i] -= (HLLC_flux_R[0][i]-HLLC_flux_R[0][i-1])*dt/dx;
+            U[1][i] -= (HLLC_flux_R[1][i]-HLLC_flux_R[1][i-1])*dt/dx;
+            U[2][i] -= (HLLC_flux_R[2][i]-HLLC_flux_R[2][i-1])*dt/dx;
         }
         //boundary condition: outflow
         U[0][0] = U[0][1];
