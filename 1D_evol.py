@@ -13,8 +13,6 @@ W0_evol = data[3]
 W1_evol = data[4]
 W2_evol = data[5]
 
-s_speed = (5.0/3.0*data[5][370]/data[3][370])**0.5
-#print(s_speed,data[4][370],data[4][370]/s_speed)
 
 r = []
 rho = []
@@ -31,28 +29,28 @@ for i in range(2000):
 evol_fig = plt.figure()            
 
 plt.subplot(3,2,1)
-plt.plot(num, W0_orig, 'o', color='red') 
+plt.scatter(num, W0_orig, 3, color='red') 
 plt.ylabel('density')
 plt.title('Initial Condition')
 plt.subplot(3,2,3)
-plt.plot(num, W1_orig, 'o', color='green') 
+plt.scatter(num, W1_orig, 3, color='green') 
 plt.ylabel('velocity')
 plt.subplot(3,2,5)
-plt.plot(num, W2_orig, 'o', color='blue') 
+plt.scatter(num, W2_orig, 3, color='blue') 
 plt.xlabel('position')
 plt.ylabel('pressure')
 
 plt.subplot(3,2,2)
-plt.plot(num, W0_evol, 'o', color='red') 
+plt.scatter(num, W0_evol, 3, color='red') 
 plt.plot(r, rho, '-', color="black")
 plt.ylabel('density')
 plt.title('Evolution')
 plt.subplot(3,2,4)
-plt.plot(num, W1_evol, 'o', color='green') 
+plt.scatter(num, W1_evol, 3, color='green') 
 plt.plot(r, v, '-', color="black")
 plt.ylabel('velocity')
 plt.subplot(3,2,6)
-plt.plot(num, W2_evol, 'o', color='blue') 
+plt.scatter(num, W2_evol, 3, color='blue') 
 plt.plot(r, pres, '-', color="black")
 plt.xlabel('position')
 plt.ylabel('pressure')
