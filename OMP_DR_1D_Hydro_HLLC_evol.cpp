@@ -1,3 +1,8 @@
+//---------------------------------------------------------------------------------------------------------
+// 1D Sod shock tube problem with the MUSCL-Hancock scheme and PCM, PLM, PPM data reconstruction. (OpenMP)
+//---------------------------------------------------------------------------------------------------------
+
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -6,11 +11,11 @@
 
 
 float Gamma = 5.0/3.0;
-int N = 1000;
+int N = 2000;
 double dx = 1.0/N;
 double T = 0.1;
-int DataReconstruct = 1;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
-int NThread = 1;   // Total number of threads in OpenMP
+int DataReconstruct = 0;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
+int NThread = 2;   // Total number of threads in OpenMP
 
 
 // primitive variables to conserved variables
@@ -288,7 +293,7 @@ int main(int argc, const char * argv[]) {
     
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./bin/PLM_data_evol.txt", "w");
+    data_ptr = fopen("./bin/data_evol.txt", "w");
     if (data_ptr==0)  return 0;
     
     //set the initial condition: Sod shock tube
