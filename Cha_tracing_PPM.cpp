@@ -2,7 +2,6 @@
 // PPM from Stone et al. (2018). With characteristic tracing and HLL correction.
 //---------------------------------------------------------------------------------------------------------
 
-
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -479,7 +478,7 @@ int main(int argc, const char * argv[]) {
 
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./bin/cha_PPM_data_evol.txt", "w");
+    data_ptr = fopen("./bin/data_evol.txt", "w");
     if (data_ptr==0)  return 0;
 
 //    for (int abc=0;abc<6;abc++){  // loop over different N (If calculate accuracy)

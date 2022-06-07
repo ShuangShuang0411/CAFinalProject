@@ -1,3 +1,7 @@
+#-----------------------------------------------------------
+# Calculate the error and the order of accuracy  
+#-----------------------------------------------------------
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
