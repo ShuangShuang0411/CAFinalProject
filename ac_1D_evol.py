@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import math
 
-
 N = np.array([50, 100, 200, 500, 1000, 2000])
 
-data = np.loadtxt("./bin/ac_PPM_data_evol.txt")
+data = np.loadtxt("./bin/ac_data_evol.txt")
 analytical = np.loadtxt("./bin/Sod_Shock_Tube")
 
 rho1 = data[0]
@@ -75,5 +74,4 @@ plt.yscale('log')
 plt.xlabel('dx')
 plt.ylabel('error')
 plt.show()
-
 

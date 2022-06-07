@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-num = np.arange(1000)
+num = np.linspace(0, 1, num=1000)
 
-data = np.loadtxt("./bin/PPM_data_evol.txt")
+data = np.loadtxt("./bin/data_evol.txt")
 analytical = np.loadtxt("./bin/Sod_Shock_Tube")
 
 W0_orig = data[0]
@@ -13,18 +13,16 @@ W0_evol = data[3]
 W1_evol = data[4]
 W2_evol = data[5]
 
-
 r = []
 rho = []
 v = []
 pres = []
 # the analytical solution for Sod shock tube
 for i in range(2000):
-    r.append(analytical[i][0]*1000)
+    r.append(analytical[i][0])
     rho.append(analytical[i][1])
     v.append(analytical[i][2])
     pres.append(analytical[i][5])
-
 
 evol_fig = plt.figure()            
 

@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------------------------------------------
+// Order of accuracy: 1D Sod shock tube problem with the MUSCL-Hancock scheme and PCM, PLM, PPM data reconstruction. (OpenMP)
+//---------------------------------------------------------------------------------------------------------------------------
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -7,8 +11,9 @@
 
 float Gamma = 5.0/3.0;
 double T = 0.1;
-int DataReconstruct = 0;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
+int DataReconstruct = 2;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
 int NN [] = {50, 100, 200, 500, 1000, 2000};
+int NThread = 2;   // Total number of threads in OpenMP
 
 
 // primitive variables to conserved variables
@@ -180,7 +185,8 @@ void HLLC_Riemann_Solver ( int N, double **U_L, double **U_R, double **HLLC_flux
     double u_L[N], u_R[N];
     double p_R[N], p_L[N], p_star[N];
     double q_L[N], q_R[N], S_L[N], S_R[N], S_star[N];
-    
+
+#   pragma omp parallel for    
     for (int i=0;i<N;i++){
         
         u_L[i] = U_L[1][i]/U_L[0][i];
@@ -247,6 +253,8 @@ void HLLC_Riemann_Solver ( int N, double **U_L, double **U_R, double **HLLC_flux
 // Main
 int main(int argc, const char * argv[]) {
 
+    omp_set_num_threads( NThread );
+
     //save data into file
     FILE * data_ptr;
     const char *file_name = "./bin/ac_data_evol.txt";
@@ -297,7 +305,6 @@ int main(int argc, const char * argv[]) {
             W[2][i] = 0.1;
         }
     }
-    
     
     Primitive2Conserved(N, W, U);
     
