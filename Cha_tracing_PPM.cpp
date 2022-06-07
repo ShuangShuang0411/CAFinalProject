@@ -1,3 +1,8 @@
+//---------------------------------------------------------------------------------------------------------
+// PPM from Stone et al. (2018). With characteristic tracing and HLL correction.
+//---------------------------------------------------------------------------------------------------------
+
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -6,8 +11,6 @@
 
 
 double Gamma = 5.0/3.0;
-//int N = 1000;
-//double dx = 1.0/N;
 double T = 0.1;
 int DataReconstruct = 2;   // Data reconstruction method: 0 for none, 1 for PLM, 2 for PPM
 int NN [] = {50, 100, 200, 500, 1000, 2000};
@@ -84,16 +87,7 @@ void ComputeLimitedSlope (int N, double **a, double *cs, double **slope) {
     double **slope_cha = new double*[3];
     for (int i = 0; i < 3; i++)   slope_cha[i] = new double[N];
 
-/*
-    for (int j=1;j<N-1;j++){
-        slope_L[j] = a[j]-a[j-1];
-        slope_R[j] = a[j+1]-a[j];
-        slope[j] = slope_L[j]*slope_R[j];
-        if (slope[j]>0)   slope[j] = 2.0*slope[j]/(slope_L[j]+slope_R[j]);
-        else              slope[j] = 0.0;
-    }
-    slope[0], slope[N-1] = 0.0, 0.0;
-*/
+//  Compute the left-, right-, and centered-differences
     for (int i = 0; i < 3; i++){
         for (int j=1;j<N-1;j++){
             slope_L[i][j] = a[i][j]-a[i][j-1];
@@ -102,6 +96,7 @@ void ComputeLimitedSlope (int N, double **a, double *cs, double **slope) {
         }
     }
 
+//  Project the left, right, and centered differences onto the characteristic variables
     for (int j=1;j<N-1;j++){
         slope_L_cha[0][j] = -0.5*a[0][j]/cs[j]*slope_L[0][j]+0.5*slope_L[2][j]/pow(cs[j],2);
         slope_L_cha[1][j] = slope_L[0][j]-slope_L[2][j]/pow(cs[j],2);
@@ -114,11 +109,13 @@ void ComputeLimitedSlope (int N, double **a, double *cs, double **slope) {
         slope_C_cha[2][j] = 0.5*a[0][j]/cs[j]*slope_C[0][j]+0.5*slope_C[2][j]/pow(cs[j],2);
     }
 
+//  Apply monotonicity constraints so that the characteristic reconstruction is total variation diminishing (TVD)
     for (int i = 0; i < 3; i++){
         for (int j=1;j<N-1;j++){
             slope_cha[i][j] = std::min(abs(slope_C_cha[i][j]),std::min(2*abs(slope_R_cha[i][j]),2*abs(slope_L_cha[i][j])));
         }
     }
+//  Project the monotonized difference in the characteristic variables back onto the primitive variables
     for (int j=1;j<N-1;j++){
         slope[0][j] = slope_cha[0][j] - cs[j]/a[0][j]*slope_cha[1][j] + pow(cs[j],2)*slope_cha[2][j];
         slope[1][j] = slope_cha[0][j];
@@ -171,7 +168,6 @@ void PLM_Hydro (int N, double **U, double **U_L, double **U_R){
 void interpolation_fnt (int N, int LeftRight, double dx, double *y, double **a, double **a_L, double **a_R, double **value){
 
     double f = 0.0;
-
     for (int i=0;i<3;i++){
         for (int j=0;j<N;j++){
             if (LeftRight==0){
@@ -215,7 +211,7 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
     ComputeLimitedSlope(N, W, cs, slope);
 
     for (int i=0;i<3;i++){
-
+//      Use parabolic interpolation to compute values at the left- and right-side of each cell center
         for (int j=1;j<N-1;j++){
             W_L[i][j] = 0.5*(W[i][j]+W[i][j-1]) - (slope[i][j]+slope[i][j-1])/6.0;
             W_R[i][j] = 0.5*(W[i][j]+W[i][j+1]) - (slope[i][j]+slope[i][j+1])/6.0;
@@ -244,6 +240,7 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         } 
     }
 
+//  Compute the left- and right-interface values using monotonized parabolic interpolation
     double *lambda_p = new double [N];
     double *lambda_n = new double [N];
     double *lambda_0 = new double [N];
@@ -273,7 +270,7 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
     interpolation_fnt(N, 0, dx, lambda_max, W, W_L, W_R, W_L_hat);
     interpolation_fnt(N, 1, dx, lambda_min, W, W_L, W_R, W_R_hat);
 
-    double f0, f1, f2;
+//  Perform the characteristic tracing
     double A, B;
     double **W_tep = new double*[3];
     for (int i = 0; i < 3; i++)   W_tep[i] = new double[N];
@@ -340,7 +337,7 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         }
     }
 
-
+//  HLL solver correction term
     double **delm_W = new double*[3];
     for (int i = 0; i < 3; i++)   delm_W[i] = new double[N];
     double **corr_L = new double*[3];
@@ -388,7 +385,6 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         W_R_face[1][j] += -0.5*dt/dx*corr_R[1][j];
         W_R_face[2][j] += -0.5*dt/dx*corr_R[2][j];
     }
-
 
     Primitive2Conserved(N, W_L_face, U_R);
     Primitive2Conserved(N, W_R_face, U_L);
@@ -483,12 +479,12 @@ int main(int argc, const char * argv[]) {
 
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./bin/cha_ac_PPM_data_evol.txt", "w");
+    data_ptr = fopen("./bin/cha_PPM_data_evol.txt", "w");
     if (data_ptr==0)  return 0;
 
-    for (int abc=0;abc<6;abc++){  // loop over different N
-    int N = NN[abc];
-//    int N = 1000;
+//    for (int abc=0;abc<6;abc++){  // loop over different N (If calculate accuracy)
+//    int N = NN[abc];  // (If calculate accuracy)
+    int N = 1000;
     double dx = 1.0/N;
 
     double **U = new double*[3];
@@ -526,14 +522,14 @@ int main(int argc, const char * argv[]) {
         }
     }
 
-/*//  Save initial data
+//  Save initial data
     for (int i=0;i<3;i++){
         for (int j=0;j<N;j++){
             fprintf(data_ptr,"%e ", W[i][j]);
         }
         fprintf(data_ptr,"\n");
     }
-*/
+//*/
     Primitive2Conserved(N, W, U);
     
     while (t<=T){
@@ -565,7 +561,7 @@ int main(int argc, const char * argv[]) {
         }
 
 //      MUSCL-Hancock scheme step 2: Evolve the face-centered data by dt/2
-///*
+
         Conserved2Flux(N, U_L, flux_L);
         Conserved2Flux(N, U_R, flux_R);
 
@@ -577,13 +573,13 @@ int main(int argc, const char * argv[]) {
             U_R[1][i] -= (flux_R[1][i]-flux_L[1][i])*0.5*dt/dx;
             U_R[2][i] -= (flux_R[2][i]-flux_L[2][i])*0.5*dt/dx;
         }  
-//*/        
+        
         for (int i=N-1;i>0;i--){
             U_R[0][i] = U_R[0][i-1];
             U_R[1][i] = U_R[1][i-1];
             U_R[2][i] = U_R[2][i-1];
         }
-//*/
+
 //      MUSCL-Hancock scheme step 3: Riemann solver (solve the flux at the left interface)
         HLLC_Riemann_Solver(N, U_R,U_L,HLLC_flux_L);
 
@@ -616,7 +612,7 @@ int main(int argc, const char * argv[]) {
         for (int j=0;j<N;j++){
             fprintf(data_ptr,"%e ", W[i][j]);
         }
-        for (int j=N;j<2000;j++)  fprintf(data_ptr,"%e ", 0.0);
+//        for (int j=N;j<2000;j++)  fprintf(data_ptr,"%e ", 0.0);  // If calculate accuracy
         fprintf(data_ptr,"\n");
     }
     
@@ -627,7 +623,7 @@ int main(int argc, const char * argv[]) {
     delete[] U_L;
     delete[] U_R;
 
-    } // loop over different N   
+//    } // loop over different N (If calculate accuracy) 
 
     fclose(data_ptr);
     
