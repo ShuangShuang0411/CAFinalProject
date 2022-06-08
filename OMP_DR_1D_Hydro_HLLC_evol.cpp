@@ -10,11 +10,54 @@
 
 
 float Gamma = 5.0/3.0;
-int N = 1000;
-double dx = 1.0/N;
-double T = 0.1;
-int DataReconstruct = 2;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
-int NThread = 2;   // Total number of threads in OpenMP
+int N_in = 1000;
+int nghost = 3;
+int N = N_in + 2 * nghost;
+double dx = 1.0/N_in;
+double T = 0.5;
+int DataReconstruct = 1;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
+int NThread = 1;   // Total number of threads in OpenMP
+
+
+
+
+//initial condition: acoustic wave
+void InitialCondition_acoustic_wave ( double **W, double time=0){
+    double L     = 1;
+    double cs    = 1.0;      // sound speed
+    double d_amp = 1.0e-5;    // density perturbation amplitude
+    double d0    = 1.0;       // density background
+    double u1 = cs*d_amp/d0;        // velocity perturbation
+    double P0 = pow(cs, 2.0)*d0/Gamma;   // background pressure
+    double P1 = pow(cs, 2.0)*d_amp;      // pressure perturbation
+    for (int i=0;i<N;i++){
+        W[0][i] = d0 + d_amp*sin(2.0*M_PI*i*L/(N_in) + 2.0*M_PI*time);
+        W[1][i] = u1*sin(2.0*M_PI*i*L/(N_in) + 2.0*M_PI*time);
+        W[2][i] = P0 + P1*sin(2.0*M_PI*i*L/(N_in) + 2.0*M_PI*time);
+    }
+}
+
+//boundary condition: periodic
+void BoundaryCondition_periodic ( double **U ){
+    double **Copy = new double*[3];
+    for (int i = 0; i < 3; i++)   Copy[i] = new double[2*nghost];
+    for (int i=0; i<nghost; i++){
+        Copy[0][i] = U[0][i+N_in];
+        Copy[1][i] = U[1][i+N_in];
+        Copy[2][i] = U[2][i+N_in];}
+    for (int i=nghost; i<2*nghost; i++){
+        Copy[0][i] = U[0][i];
+        Copy[1][i] = U[1][i];
+        Copy[2][i] = U[2][i];}        
+    for (int i=0;i<nghost;i++){
+        U[0][i] = Copy[0][i];
+        U[1][i] = Copy[1][i];
+        U[2][i] = Copy[2][i];
+        U[0][N-1-i] = Copy[0][2*nghost-i-1];
+        U[1][N-1-i] = Copy[1][2*nghost-i-1];
+        U[2][N-1-i] = Copy[2][2*nghost-i-1];
+    }
+}
 
 
 // primitive variables to conserved variables
@@ -284,6 +327,9 @@ int main(int argc, const char * argv[]) {
     for (int i = 0; i < 3; i++)   flux_L[i] = new double[N];
     double **flux_R = new double*[3];
     for (int i = 0; i < 3; i++)   flux_R[i] = new double[N];
+
+    double **W_init = new double*[3];
+    for (int i = 0; i < 3; i++)   W_init[i] = new double[N]; 
     
     int num = 0;
     double dt;
@@ -296,21 +342,24 @@ int main(int argc, const char * argv[]) {
     if (data_ptr==0)  return 0;
     
     //set the initial condition: Sod shock tube
-    for (int i=0;i<N;i++){
-        if (i<N/2-1){
-            W[0][i] = 1.0;
-            W[1][i] = 0.0;
-            W[2][i] = 1.0;
-        }
-        else{
-            W[0][i] = 0.125;
-            W[1][i] = 0.0;
-            W[2][i] = 0.1;
-        }
-    }
+    // for (int i=0;i<N;i++){
+    //     if (i<N/2-1){
+    //         W[0][i] = 1.0;
+    //         W[1][i] = 0.0;
+    //         W[2][i] = 1.0;
+    //     }
+    //     else{
+    //         W[0][i] = 0.125;
+    //         W[1][i] = 0.0;
+    //         W[2][i] = 0.1;
+    //     }
+    // }
+
+    InitialCondition_acoustic_wave(W);
+    BoundaryCondition_periodic(W); 
     
     for (int i=0;i<3;i++){
-        for (int j=0;j<N;j++){
+        for (int j=nghost;j<N-nghost;j++){
             fprintf(data_ptr,"%e ", W[i][j]);
         }
         fprintf(data_ptr,"\n");
@@ -371,36 +420,50 @@ int main(int argc, const char * argv[]) {
 
 //      MUSCL-Hancock scheme step 4: Evolve the volume-averaged data by dt
 #       pragma omp parallel for
-        for (int i=1;i<N-1;i++){
+        for (int i=nghost;i<N-nghost;i++){
             U[0][i] -= (HLLC_flux_L[0][i+1]-HLLC_flux_L[0][i])*dt/dx;
             U[1][i] -= (HLLC_flux_L[1][i+1]-HLLC_flux_L[1][i])*dt/dx;
             U[2][i] -= (HLLC_flux_L[2][i+1]-HLLC_flux_L[2][i])*dt/dx;
         }
 
 //      Boundary condition: outflow (ghost zone = 2 cells)
-        U[0][0] = U[0][2];
-        U[1][0] = U[1][2];
-        U[2][0] = U[2][2];
-        U[0][1] = U[0][2];
-        U[1][1] = U[1][2];
-        U[2][1] = U[2][2];
-        U[0][N-1] = U[0][N-3];
-        U[1][N-1] = U[1][N-3];
-        U[2][N-1] = U[2][N-3];
-        U[0][N-2] = U[0][N-3];
-        U[1][N-2] = U[1][N-3];
-        U[2][N-2] = U[2][N-3];
+    //     U[0][0] = U[0][2];
+    //     U[1][0] = U[1][2];
+    //     U[2][0] = U[2][2];
+    //     U[0][1] = U[0][2];
+    //     U[1][1] = U[1][2];
+    //     U[2][1] = U[2][2];
+    //     U[0][N-1] = U[0][N-3];
+    //     U[1][N-1] = U[1][N-3];
+    //     U[2][N-1] = U[2][N-3];
+    //     U[0][N-2] = U[0][N-3];
+    //     U[1][N-2] = U[1][N-3];
+    //     U[2][N-2] = U[2][N-3];
+
+        BoundaryCondition_periodic(U); 
     }
     
+
+
     Conserved2Primitive(U, W);
     
     end = omp_get_wtime(); 
+
+    InitialCondition_acoustic_wave(W_init, t);
+    BoundaryCondition_periodic(W_init); 
+    double error = 0;
+    for (int i=nghost;i<N-nghost;i++){
+        error += fabs(W_init[0][i] - W[0][i]);
+    }
+    error /= N_in;
+
     printf("N = %d, DR = %d, total threads = %d\n", N, DataReconstruct, NThread);
-    printf("Wall-clock time = %6f, number of iteration = %d\n", end-start, num);    
+    printf("Wall-clock time = %6f, number of iteration = %d\n", end-start, num);
+    printf("Errors = %e\n", error);      
 
     //save data into file
     for (int i=0;i<3;i++){
-        for (int j=0;j<N;j++){
+        for (int j=nghost;j<N-nghost;j++){
             fprintf(data_ptr,"%e ", W[i][j]);
         }
         fprintf(data_ptr,"\n");
