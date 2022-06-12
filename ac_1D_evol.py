@@ -9,7 +9,7 @@ import math
 N = np.array([50, 100, 200, 500, 1000, 2000])
 
 data = np.loadtxt("./bin/ac_data_evol.txt")
-analytical = np.loadtxt("./bin/Sod_Shock_Tube")
+analytical = np.loadtxt("./Sod_Shock_Tube")
 
 rho1 = data[0]
 rho2 = data[3]

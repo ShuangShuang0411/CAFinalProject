@@ -2,9 +2,26 @@ High-order Data Reconstruction in Hydro
 
 This is the final project for Computational Astrophysics 2022, by Shuang-Shuang Chen and Hao-Yang Hsu.
 
-The following is a brief description on how to use the code:
-1. First you can modify 1D_Hydro_HLLC_evol.cpp, and compile it using "sh compile.sh 1D_Hydro_HLLC_evol.cpp". The executable 1D_Hydro_HLLC_evol.out will then be generated and put in bin/ directory.
-2. Go to bin/ and run the code by commanding "./1D_Hydro_HLLC_evol.out", it will generate a data_evol.txt file containing the results in the same directory (bin/).
-3. Plot the data by commanding "python 1D_evol.py" in the main directory.
 
+The following is a brief description on how to use the code:
+
+1. First you can modify filename.cpp, and compile it using "sh compile.sh filename.cpp". The executable filename.out will then be generated and put in bin/ directory.
+2. Run the code by commanding "./bin/filename.out", it will generate a data_evol.txt file containing the results in the same directory (bin/).
+3. Plot the data by commanding "python filename.py" in the main directory.
+
+
+The description of the files:
+
+DataReconstruct_ShockTube.cpp:    the main code of PCM, PLM and PPM, with the shock tube problem.
+DataReconstruct_AcousticWave.cpp: the code of PCM, PLM and PPM, with the acoustic wave problem to test order of accuracy.
+GP_1D_Hydro_HLLC_evol.cpp:        the main code of GP, with the acoustic wave problem.
+Cha_tracing_PPM.cpp:              the code of PPM with characteristic tracing test (method of Stone et al. 2018).
+CW_PPM.cpp:                       the code of PPM (method of Colella & Woodward 1984).
+1D_evol_shocktube.py:             plot the evolved data from DataReconstruct_ShockTube.cpp, Cha_tracing_PPM.cpp, CW_PPM.cpp.
+1D_evol_acoustic.py:              plot the evolved data from GP_1D_Hydro_HLLC_evol.cpp.
+plot_AcousticWave.py:             plot the evolved data from DataReconstruct_AcousticWave.cpp.
+ac_DataReconstruct_ShockTube.cpp: test the order of accuracy of DataReconstruct_ShockTube.cpp.
+ac_CW_PPM.cpp:                    test the order of accuracy of CW_PPM.cpp.
+ac_1D_evol.py:                    calculate the order of accuracy of ac_DataReconstruct_ShockTube.cpp, ac_CW_PPM.cpp.
+Sod_Shock_Tube:                   the analytical solution for shock tube problem at T=0.1.
 

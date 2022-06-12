@@ -8,7 +8,7 @@ import numpy as np
 num = np.linspace(0, 1, num=1000)
 
 data = np.loadtxt("./bin/data_evol.txt")
-analytical = np.loadtxt("./bin/Sod_Shock_Tube")
+analytical = np.loadtxt("./Sod_Shock_Tube")
 
 W0_orig = data[0]
 W1_orig = data[1]

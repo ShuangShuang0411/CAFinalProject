@@ -11,7 +11,7 @@
 
 float Gamma = 5.0/3.0;
 double T = 0.1;
-int DataReconstruct = 0;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
+int DataReconstruct = 2;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
 int NN [] = {50, 100, 200, 500, 1000, 2000};
 int NThread = 2;   // Total number of threads in OpenMP
 
@@ -139,13 +139,6 @@ void PPM_Hydro (int N, double **U, double **U_L, double **U_R){
 //          compute the left and right states of each cell
             W_L[i][j] = 0.5*(W[i][j]+W[i][j-1]) - (slope[j]+slope[j-1])/6.0;
             W_R[i][j] = 0.5*(W[i][j]+W[i][j+1]) - (slope[j]+slope[j+1])/6.0;
-//          ensure face-centered variables lie between nearby volume-averaged (~cell-centered) values
-            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
-            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
-            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
-            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
-            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
-            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
         }
         W_L[i][0], W_L[i][N-1], W_R[i][0], W_R[i][N-1] = 0.0, 0.0, 0.0, 0.0;
 
@@ -161,7 +154,16 @@ void PPM_Hydro (int N, double **U, double **U_L, double **U_R){
             else if (-pow(W_R[i][j]-W_L[i][j],2)/6.0 > (W_R[i][j]-W_L[i][j])*(W[i][j]-0.5*W_L[i][j]-0.5*W_R[i][j])){ 
                 W_R[i][j] = 3*W[i][j]-2*W_L[i][j];
             }   
-        } 
+        }
+//      ensure face-centered variables lie between nearby volume-averaged (~cell-centered) values
+        for (int j=1;j<N-1;j++){
+            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
+            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
+            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
+            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
+            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
+            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
+        }
     }
 
     Primitive2Conserved(N, W_L, U_L);

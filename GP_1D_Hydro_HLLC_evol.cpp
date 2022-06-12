@@ -335,7 +335,7 @@ int main(int argc, const char * argv[]) {
     
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./data_evol.txt", "w");
+    data_ptr = fopen("./bin/data_evol.txt", "w");
     if (data_ptr==0)  return 0;
     
     //set the initial condition

@@ -1,3 +1,7 @@
+//---------------------------------------------------------------------------------------------------------------------------
+// Order of accuracy: PPM from Colella & Woodward (1984) section 1+3.
+//---------------------------------------------------------------------------------------------------------------------------
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -7,8 +11,6 @@
 
 
 double Gamma = 5.0/3.0;
-//int N = 1000;
-//double dx = 1.0/N;
 double T = 0.1;
 int DataReconstruct = 1;   // Data reconstruction method: 0 for none, 1 for PPM
 int NN [] = {50, 100, 200, 500, 1000, 2000};
@@ -147,59 +149,6 @@ void interpolation_fnt (int N, int LeftRight, double dx, double *y, double *a, d
 }
 
 
-void correction_HLL (int N, int LeftRight, double dt, double dx, double *lambda_p, double *lambda_n, double *lambda_0, double *cs, double **W, double **delm_W, double **value){
-
-    double f0, f1, f2;
-    double *lambda_max = new double [N];
-    double *lambda_min = new double [N];
-
-    for (int j=0;j<N;j++){
-        lambda_max[j] = std::max(lambda_p[j], std::max(lambda_n[j], lambda_0[j]));
-        lambda_min[j] = std::min(lambda_p[j], std::min(lambda_n[j], lambda_0[j]));
-    }
-
-    for (int j=0;j<N;j++){
-        f0, f1, f2 == 0.0, 0.0, 0.0;
-        if (LeftRight==0){  
-            if (lambda_p[j]<0){
-                f0 += (lambda_p[j]-lambda_max[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2));
-                f1 += (lambda_p[j]-lambda_max[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*cs[j]/W[0][j];
-                f2 += (lambda_p[j]-lambda_max[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*pow(cs[j],2);
-            }
-            if (lambda_n[j]<0){
-                f0 += (lambda_n[j]-lambda_max[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2));
-                f1 += (lambda_n[j]-lambda_max[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*(-cs[j])/W[0][j];
-                f2 += (lambda_n[j]-lambda_max[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*pow(cs[j],2);
-            }
-            if (lambda_0[j]<0){
-                f0 += (lambda_0[j]-lambda_max[j])*(delm_W[0][j]-delm_W[2][j]/pow(cs[j],2));
-            }
-            value[0][j] = -0.5*dt/dx*f0;
-            value[1][j] = -0.5*dt/dx*f1;
-            value[2][j] = -0.5*dt/dx*f2;
-        }
-        else {
-            if (lambda_p[j]>0){
-                f0 += (lambda_p[j]-lambda_min[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2));
-                f1 += (lambda_p[j]-lambda_min[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*cs[j]/W[0][j];
-                f2 += (lambda_p[j]-lambda_min[j])*(0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*pow(cs[j],2);
-            }
-            if (lambda_n[j]>0){
-                f0 += (lambda_n[j]-lambda_min[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2));
-                f1 += (lambda_n[j]-lambda_min[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*(-cs[j])/W[0][j];              
-                f2 += (lambda_n[j]-lambda_min[j])*(-0.5*W[0][j]*delm_W[1][j]/cs[j]+0.5*delm_W[2][j]/pow(cs[j],2))*pow(cs[j],2);
-            }
-            if (lambda_0[j]>0){
-                f0 += (lambda_0[j]-lambda_min[j])*(delm_W[0][j]-delm_W[2][j]/pow(cs[j],2));
-            }
-            value[0][j] = -0.5*dt/dx*f0;
-            value[1][j] = -0.5*dt/dx*f1;
-            value[2][j] = -0.5*dt/dx*f2;
-        }
-    }
-}
-
-
 void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **U_R){
 
     double **W = new double*[3];
@@ -224,16 +173,12 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
     for (int i = 0; i < 3; i++)   W_L[i] = new double[N];
     double **W_R = new double*[3];
     for (int i = 0; i < 3; i++)   W_R[i] = new double[N];
-    double **delm_W = new double*[3];
-    for (int i = 0; i < 3; i++)   delm_W[i] = new double[N];
 
     Conserved2Primitive(N, U, W);
 
     double *cs = new double [N];
     for (int j=0;j<N;j++){
         cs[j] = sqrt(Gamma*W[2][j]/W[0][j]);
-//        if (W[1][j]>=0)  cs[j] += W[1][j];
-//        else  cs[j] -= W[1][j];
     }
 
     double *y_L = new double [N];
@@ -320,29 +265,6 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         W_R[0][j] = 1.0/(1.0/(W_R_prime[0][j])-beta_R_p[j]-beta_R_n[j]-beta_R_0[j]);
         W_R[1][j] = W_R_prime[1][j] + C_R[j]*(beta_R_p[j]-beta_R_n[j]);
         W_R[2][j] = W_R_prime[2][j] + C_R[j]*C_R[j]*(beta_R_p[j]+beta_R_n[j]);
-    }
-
-//  Correction for HLL solver 
-    double **corr_L = new double*[3];
-    for (int i = 0; i < 3; i++)   corr_L[i] = new double[N];
-    double **corr_R = new double*[3];
-    for (int i = 0; i < 3; i++)   corr_R[i] = new double[N];
-    double *tempL = new double [N];
-    double *tempR = new double [N];
-
-    for (int j=0;j<N;j++){
-        lambda_p[j] /= dt;
-        lambda_n[j] /= dt;
-        lambda_0[j] /= dt;
-    }
-    for (int i=0;i<3;i++)   get_aLR(N, W[i], tempL, tempR, delm_W[i]);
-
-    correction_HLL (N, 0, dt, dx, lambda_p, lambda_n, lambda_0, cs, W, delm_W, corr_L);
-    correction_HLL (N, 1, dt, dx, lambda_p, lambda_n, lambda_0, cs, W, delm_W, corr_R);
-
-    for (int i=0;i<3;i++){
-//        for (int j=0;j<N;j++)    W_L[i][j] += corr_L[i][j];
-//        for (int j=0;j<N-1;j++)    W_R[i][j] += corr_R[i][j+1];
     }
 
     Primitive2Conserved(N, W_L, U_L);
@@ -439,7 +361,7 @@ int main(int argc, const char * argv[]) {
 
     //save data into file
     FILE * data_ptr;
-    data_ptr = fopen("./bin/ac_PPM_CW_data_evol.txt", "w");
+    data_ptr = fopen("./bin/ac_data_evol.txt", "w");
     if (data_ptr==0)  return 0;
 
     for (int abc=0;abc<6;abc++){  // loop over different N
@@ -488,14 +410,7 @@ int main(int argc, const char * argv[]) {
             W[2][i] = 0.1;
         }
     }
-/*
-    for (int i=0;i<3;i++){
-        for (int j=0;j<N;j++){
-            fprintf(data_ptr,"%e ", W[i][j]);
-        }
-        fprintf(data_ptr,"\n");
-    }
-*/    
+
     Primitive2Conserved(N, W, U);
     
     while (t<=T){
@@ -563,18 +478,6 @@ int main(int argc, const char * argv[]) {
             
         }
 
-//        printf("Debug: left rho = %.10f, right rho = %10f\n");
-        //update data
-/*
-        HLLC_Riemann_Solver(U,U_R,HLLC_flux_R);
-        HLLC_Riemann_Solver(U_L,U,HLLC_flux_L);
-
-        for (int i=1;i<N-1;i++){
-            U[0][i] -= (HLLC_flux_R[0][i]-HLLC_flux_L[0][i])*dt/dx;
-            U[1][i] -= (HLLC_flux_R[1][i]-HLLC_flux_L[1][i])*dt/dx;
-            U[2][i] -= (HLLC_flux_R[2][i]-HLLC_flux_L[2][i])*dt/dx;
-        }
-*/
 //      With data reconstruction
         HLLC_Riemann_Solver(N, U_L, U_R, HLLC_flux_R);
         for (int i=1;i<N-1;i++){

@@ -1,3 +1,7 @@
+#-----------------------------------------------------------
+# Plot the evolved data of acoustic wave problem
+#-----------------------------------------------------------
+
 import matplotlib.pyplot as plt
 import numpy as np
 

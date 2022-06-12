@@ -12,7 +12,7 @@
 double Gamma = 5.0/3.0;
 int nghost = 2;
 double T = 2.0;
-int DataReconstruct = 1;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
+int DataReconstruct = 2;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic)
 int NThread = 2;   // Total number of threads in OpenMP
 int NN [] = {16, 32, 64, 128, 256, 528};
 
