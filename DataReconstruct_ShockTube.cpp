@@ -146,13 +146,6 @@ void PPM_Hydro (double **U, double **U_L, double **U_R){
 //          compute the left and right states of each cell
             W_L[i][j] = 0.5*(W[i][j]+W[i][j-1]) - (slope[j]+slope[j-1])/6.0;
             W_R[i][j] = 0.5*(W[i][j]+W[i][j+1]) - (slope[j]+slope[j+1])/6.0;
-//          ensure face-centered variables lie between nearby volume-averaged (~cell-centered) values
-            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
-            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
-            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
-            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
-            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
-            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
         }
         W_L[i][0], W_L[i][N-1], W_R[i][0], W_R[i][N-1] = 0.0, 0.0, 0.0, 0.0;
 
@@ -170,6 +163,15 @@ void PPM_Hydro (double **U, double **U_L, double **U_R){
                 W_R[i][j] = 3*W[i][j]-2*W_L[i][j];
             }   
         } 
+//      ensure face-centered variables lie between nearby volume-averaged (~cell-centered) values
+        for (int j=1;j<N-1;j++){
+            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
+            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
+            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
+            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
+            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
+            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
+        }
     }
 
     Primitive2Conserved(W_L, U_L);
