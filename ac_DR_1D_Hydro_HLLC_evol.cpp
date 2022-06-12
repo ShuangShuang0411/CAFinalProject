@@ -11,7 +11,7 @@
 
 float Gamma = 5.0/3.0;
 double T = 0.1;
-int DataReconstruct = 2;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
+int DataReconstruct = 0;   // Data reconstruction method: 0 for PCM (constant), 1 for PLM (linear), 2 for PPM (parabolic) 
 int NN [] = {50, 100, 200, 500, 1000, 2000};
 int NThread = 2;   // Total number of threads in OpenMP
 

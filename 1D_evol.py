@@ -1,5 +1,5 @@
 #-----------------------------------------------------------
-# Plot the evolved data
+# Plot the evolved data of shock tube problem
 #-----------------------------------------------------------
 
 import matplotlib.pyplot as plt

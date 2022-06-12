@@ -11,7 +11,7 @@
 
 double Gamma = 5.0/3.0;
 double T = 0.1;
-int DataReconstruct = 2;   // Data reconstruction method: 0 for none, 1 for PLM, 2 for PPM
+int DataReconstruct = 1;   // Data reconstruction method: 0 for none, 1 for PLM, 2 for PPM
 int NN [] = {50, 100, 200, 500, 1000, 2000};
 int NThread = 2;   // Total number of threads in OpenMP
 
@@ -111,7 +111,7 @@ void ComputeLimitedSlope (int N, double **a, double *cs, double **slope) {
 //  Apply monotonicity constraints so that the characteristic reconstruction is total variation diminishing (TVD)
     for (int i = 0; i < 3; i++){
         for (int j=1;j<N-1;j++){
-            slope_cha[i][j] = std::min(abs(slope_C_cha[i][j]),std::min(2*abs(slope_R_cha[i][j]),2*abs(slope_L_cha[i][j])));
+            slope_cha[i][j] = std::min(fabs(slope_C_cha[i][j]),std::min(2*fabs(slope_R_cha[i][j]),2*fabs(slope_L_cha[i][j])));
         }
     }
 //  Project the monotonized difference in the characteristic variables back onto the primitive variables
@@ -214,13 +214,6 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         for (int j=1;j<N-1;j++){
             W_L[i][j] = 0.5*(W[i][j]+W[i][j-1]) - (slope[i][j]+slope[i][j-1])/6.0;
             W_R[i][j] = 0.5*(W[i][j]+W[i][j+1]) - (slope[i][j]+slope[i][j+1])/6.0;
-
-            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
-            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
-            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
-            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
-            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
-            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
         }
         W_L[i][0], W_L[i][N-1], W_R[i][0], W_R[i][N-1] = 0.0, 0.0, 0.0, 0.0;
 
@@ -237,6 +230,14 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
                 W_R[i][j] = 3*W[i][j]-2*W_L[i][j];
             }   
         } 
+        for (int j=1;j<N-1;j++){
+            W_L[i][j] = std::max(W_L[i][j], std::min(W[i][j-1], W[i][j]));
+            W_L[i][j] = std::min(W_L[i][j], std::max(W[i][j-1], W[i][j]));
+            W_R[i][j] = 2.0*W[i][j] - W_L[i][j];
+            W_R[i][j] = std::max(W_R[i][j], std::min(W[i][j+1], W[i][j]));
+            W_R[i][j] = std::min(W_R[i][j], std::max(W[i][j+1], W[i][j]));
+            W_L[i][j] = 2.0*W[i][j] - W_R[i][j];
+        }
     }
 
 //  Compute the left- and right-interface values using monotonized parabolic interpolation
@@ -385,7 +386,7 @@ void PPM_Hydro (int N, double dt, double dx, double **U, double **U_L, double **
         W_R_face[2][j] += -0.5*dt/dx*corr_R[2][j];
     }
 
-    Primitive2Conserved(N, W_L_face, U_R);
+    Primitive2Conserved(N, W_L_face, U_R);  
     Primitive2Conserved(N, W_R_face, U_L);
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -481,10 +482,15 @@ int main(int argc, const char * argv[]) {
     data_ptr = fopen("./bin/data_evol.txt", "w");
     if (data_ptr==0)  return 0;
 
+    double start;
+    double end;
+
 //    for (int abc=0;abc<6;abc++){  // loop over different N (If calculate accuracy)
+    start = omp_get_wtime(); 
 //    int N = NN[abc];  // (If calculate accuracy)
     int N = 1000;
     double dx = 1.0/N;
+    int num = 0;
 
     double **U = new double*[3];
     for (int i = 0; i < 3; i++)   U[i] = new double[N]; 
@@ -537,6 +543,7 @@ int main(int argc, const char * argv[]) {
         SoundSpeedMax(N, U, &S_max);
         dt = dx/S_max;
         t += dt; 
+        num += 1;
         printf("Debug: dt = %.10f, t = %.10f\n", dt, t);
 
 //      MUSCL-Hancock scheme step 1: Data reconstruction
@@ -605,7 +612,10 @@ int main(int argc, const char * argv[]) {
     }
     
     Conserved2Primitive(N, U, W);
-    
+   
+    end = omp_get_wtime();
+    printf("N = %d, DR = %d, Wall-clock time = %6f, number of iteration = %d\n", N, DataReconstruct, end-start, num);
+ 
     //save data into file
     for (int i=0;i<3;i++){
         for (int j=0;j<N;j++){
