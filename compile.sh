@@ -14,4 +14,4 @@ OPENFLAG=-fopenmp
 # set the output name
 OUT=./bin/$(basename ${IN} .cpp).out
 
-${CC} ${OPENFLAG} ${IN} -o ${OUT}
+${CC} -I ./eigen-3.4.0 ${OPENFLAG} ${IN} -o ${OUT}
